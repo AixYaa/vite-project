@@ -28,7 +28,7 @@ function toggleTheme(e: MouseEvent) {
         (document as Document).documentElement.setAttribute('data-theme', newUi);
         return;
     }
-    const transition = (document as any).startViewTransition(() => {
+    const transition = (document as Document).startViewTransition(() => {
         uiModelStore.setUiModel(newUi);
         document.documentElement.setAttribute('data-theme', newUi);
         // Sync Element Plus dark class for component theming
