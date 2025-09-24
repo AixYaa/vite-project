@@ -1,7 +1,57 @@
 <script setup lang="ts">
+import Header from '@/views/Home/Header/HeaderView.vue';
+import AsideMenu from '@/views/Home/Aside/AsideMenu.vue';
+import { useMenuStore } from '@/stores/Menu';
+import router from '@/router';
+import Breadcrumb from '@/components/Breadcrumb/BreadcrumbView.vue';
+import { RouterView } from 'vue-router';
+const menuStore = useMenuStore();
+console.log(router.currentRoute.value.matched);
 
 </script>
 
 <template>
-    HomeView
+    <div class="common-layout">
+        <el-container>
+            <el-aside style="height:100vh;" :width="menuStore.collapse ? menuStore.miniWidth + 'px' : menuStore.width + 'px'"
+                v-if="menuStore.showAside">
+                <AsideMenu />
+            </el-aside>
+            <el-container>
+                <el-header v-if="menuStore.showHeader">
+                    <Header />
+                </el-header>
+                <Breadcrumb />
+                <el-main>
+                    <RouterView v-slot="{ Component, route }">
+                        <Transition name="fade" mode="out-in">
+                            <component :is="Component" :key="route.fullPath" />
+                        </Transition>
+                    </RouterView>
+                </el-main>
+            </el-container>
+        </el-container>
+    </div>
 </template>
+
+<style lang="scss" scoped>
+.el-aside {
+    transition: width 0.3s cubic-bezier(.77, 0, .18, 1);
+    /* 可选：overflow隐藏内容溢出 */
+    overflow: hidden;
+}
+::v-deep(.el-menu) {
+    height: 100vh;
+}
+
+/* 页面主内容淡入淡出动画 */
+:deep(.fade-enter-active),
+:deep(.fade-leave-active) {
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+:deep(.fade-enter-from),
+:deep(.fade-leave-to) {
+    opacity: 0;
+    transform: translateY(6px);
+}
+</style>
