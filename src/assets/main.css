@@ -1,4 +1,26 @@
 * {
-  padding: 0;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  background-color: #fff;
+  color: #000;
+  transition: background-color 0.5s, color 0.5s;
+}
+html[data-theme='dark'] {
+  background-color: #222;
+  color: #fff;
+}
+html[data-theme='day'] {
+  background-color: #fff;
+  color: #000;
+}
+body, #app {
+  background: none !important;
+}
+::view-transition-new(root),
+::view-transition-old(root) {
+  animation: none;
 }
