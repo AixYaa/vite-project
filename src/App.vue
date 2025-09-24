@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Tool from './components/SwitchUI/ToolView.vue';
+// import Tool from './components/SwitchUI/ToolView.vue';
 import { useUiModelStore } from './stores/uiModel';
 import { RouterView } from 'vue-router';
 
@@ -24,7 +24,7 @@ document.documentElement.classList.toggle('dark', initialTheme === 'dark');
 
 <template>
   <div id="app">
-    <Tool z-index='999999' />
+    <!-- <Tool z-index='999999' /> -->
     <RouterView />
   </div>
 </template>
