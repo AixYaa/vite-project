@@ -2,8 +2,8 @@
     <div>
         <el-card>
             <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:12px;">
-                <div>角色管理</div>
-                <el-button type="primary" @click="openCreate">新建角色</el-button>
+                <div>权限管理</div>
+                <el-button type="primary" @click="openCreate">新建权限</el-button>
             </div>
             <el-table :data="rows" stripe style="width: 100%">
                 <el-table-column prop="name" label="名称" />
@@ -29,7 +29,7 @@
             </div>
         </el-card>
 
-        <el-dialog v-model="visible" :title="editing ? '编辑角色' : '新建角色'" width="520">
+        <el-dialog v-model="visible" :title="editing ? '编辑权限' : '新建权限'" width="520">
             <el-form :model="form" label-width="80">
                 <el-form-item label="名称">
                     <el-input v-model="form.name" />
@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchRoles, createRole, updateRole, deleteRole } from '@/axios/roles'
+import { fetchPermissions, createPermission, updatePermission, deletePermission } from '@/axios/permissions'
 
 const rows = ref<any[]>([])
 const total = ref(0)
@@ -65,7 +65,7 @@ const currentId = ref<string | null>(null)
 const form = ref<any>({ name: '', code: '', description: '' })
 
 const load = async () => {
-    const { data } = await fetchRoles({ page: page.value, limit: limit.value })
+    const { data } = await fetchPermissions({ page: page.value, limit: limit.value })
     if (data.success) {
         rows.value = data.data
         total.value = data.pagination.total
@@ -89,10 +89,10 @@ const openEdit = (row: any) => {
 const onSubmit = async () => {
     try {
         if (editing.value && currentId.value) {
-            await updateRole(currentId.value, form.value)
+            await updatePermission(currentId.value, form.value)
             ElMessage.success('更新成功')
         } else {
-            await createRole(form.value)
+            await createPermission(form.value)
             ElMessage.success('创建成功')
         }
         visible.value = false
@@ -104,8 +104,8 @@ const onSubmit = async () => {
 
 const onDelete = async (row: any) => {
     try {
-        await ElMessageBox.confirm('确定删除该角色吗？', '提示', { type: 'warning' })
-        await deleteRole(row._id)
+        await ElMessageBox.confirm('确定删除该权限吗？', '提示', { type: 'warning' })
+        await deletePermission(row._id)
         ElMessage.success('删除成功')
         await load()
     } catch {}
@@ -117,3 +117,5 @@ onMounted(load)
 <style scoped>
 
 </style>
+
+

@@ -44,6 +44,7 @@ import { Menu, Setting } from '@element-plus/icons-vue';
 import { useMenuStore } from '@/stores/Menu';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
+import instance from '@/axios/index';
 const menuStore = useMenuStore();
 
 const handleSetting = () => {
@@ -51,12 +52,17 @@ const handleSetting = () => {
     menuStore.toggleShowSetting();
 };
 
-const logout = () => {
-    localStorage.removeItem('AixAdminToken')
-    
-    // 关闭设置抽屉
+const logout = async () => {
+    try {
+        // 调用后端登出，服务端会清理Redis会话并加入黑名单
+        await instance.post('/auth/logout');
+    } catch (e) {
+        // 忽略登出错误，继续本地清理
+    }
+    // 本地清理并跳转
+    localStorage.removeItem('AixAdminToken');
     menuStore.showSetting = false;
-    router.replace('/login')
+    router.replace('/login');
     ElMessage.success('退出登录成功');
 }
 </script>

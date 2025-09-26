@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/Home/HomeView.vue'
 import instance from '../axios/index.ts';
+import { useMenuStore } from '@/stores/Menu'
 import { ElMessage } from 'element-plus';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,6 +24,20 @@ const router = createRouter({
           component: () => import('../views/Home/Main/RolesView.vue'),
           meta: { title: '角色管理' }
         }
+        ,
+        {
+          path: '/permissions',
+          name: 'permissions',
+          component: () => import('../views/Home/Main/PermissionsView.vue'),
+          meta: { title: '权限管理' }
+        }
+        ,
+        {
+          path: '/menus',
+          name: 'menus',
+          component: () => import('../views/Home/Main/MenusView.vue'),
+          meta: { title: '目录管理' }
+        }
       ]
     },
     {
@@ -43,7 +58,10 @@ router.beforeEach((to, from, next) => {
       next({ name: 'login' });
     } else {
       // 调用后端获取用户信息，验证token有效性
-      instance.get('/auth/profile').then(() => {
+      instance.get('/auth/profile').then(async () => {
+        const menuStore = useMenuStore()
+        // 加载并注入动态菜单对应的路由，仅执行一次
+        await menuStore.loadMyMenus()
         next();
       }).catch(() => {
         ElMessage.error('登录已过期，请重新登录');

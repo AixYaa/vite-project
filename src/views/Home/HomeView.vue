@@ -38,10 +38,11 @@ console.log(router.currentRoute.value.matched);
 .el-aside {
     transition: width 0.3s cubic-bezier(.77, 0, .18, 1);
     /* 可选：overflow隐藏内容溢出 */
+    height: 100vh;
     overflow: hidden;
 }
 ::v-deep(.el-menu) {
-    height: 100vh;
+    // height: 100vh;
 }
 
 /* 页面主内容淡入淡出动画 */
