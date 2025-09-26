@@ -1,4 +1,5 @@
 import axios from "axios";
+import router from "@/router";
 
 const instance = axios.create({
     baseURL: "/api",
@@ -8,7 +9,7 @@ const instance = axios.create({
 instance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem("AixAdminToken");
-        if (token && config.url !== "/login") {
+        if (token) {
             if (config.headers) {
                 config.headers["Authorization"] = `Bearer ${token}`;
             }
@@ -26,9 +27,14 @@ instance.interceptors.response.use(
     },
     (error) => {
         if (error.response) {
-            // 处理响应错误
-            const { status, data } = error.response;
-            console.error(`Error ${status}: ${data.message}`);
+            const { status } = error.response;
+            if (status === 401) {
+                // 未授权，清理并跳转登录（不刷新整页）
+                localStorage.removeItem("AixAdminToken");
+                if (router.currentRoute.value.name !== 'login') {
+                    router.push({ name: 'login' });
+                }
+            }
         }
         return Promise.reject(error);
     }

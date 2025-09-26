@@ -10,8 +10,8 @@
                 <el-input v-model="formData.password" type="password" autocomplete="off" />
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="handleLogin(formRef)">登录</el-button>
-                <el-button @click="handleLogin(formRef)">重置</el-button>
+                <el-button type="primary" native-type="button" @click="handleLogin(formRef)">登录</el-button>
+                <el-button native-type="button" @click="resetForm(formRef)">重置</el-button>
             </el-form-item>
         </el-form>
     </div>
@@ -40,24 +40,29 @@ const handleLogin = (formRef: FormInstance | undefined) => {
     if (!formRef) return;
     formRef.validate((valid) => {
         if (valid) {
-            // 使用mock登录接口
-            instance.post('/login', formData).then((response) => {
-                if (response.data.code === 200) {
+            // 接入后端登录接口
+            instance.post('/auth/login', formData).then((response) => {
+                const { success, data, message } = response.data;
+                if (success) {
                     ElMessage.success('登录成功');
-                    const {token} = response.data.data;                    
-                    localStorage.setItem('AixAdminToken', token);
+                    const { accessToken } = data;
+                    localStorage.setItem('AixAdminToken', accessToken);
                     router.push({ name: 'home' });
-
                 } else {
-                    ElMessage.error(response.data.message);
+                    ElMessage.error(message || '登录失败');
                 }
             }).catch((error) => {
-                console.error(error);
+                ElMessage.error(error?.response?.data?.message || '登录失败');
             });
         } else {
             ElMessage.error('表单验证失败');
         }
     });
+};
+
+const resetForm = (formRef: FormInstance | undefined) => {
+    if (!formRef) return;
+    formRef.resetFields();
 };
 </script>
 

@@ -12,7 +12,7 @@ export default defineConfig({
     vueDevTools(),
     viteMockServe({
       mockPath: "./src/mock", // 设置模拟.ts 文件的存储文件夹
-      enable: true, // 是否启用 mock 功能
+      enable: false, // 关闭 mock，接入真实后端
     }),
 
   ],
@@ -23,6 +23,13 @@ export default defineConfig({
   },
   server: {
     port: 8899,
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      }
+    }
   }
 })
