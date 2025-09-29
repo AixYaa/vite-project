@@ -162,13 +162,10 @@ import {
   Document, 
   Setting, 
   DataAnalysis,
-  TrendCharts,
   Refresh,
   ArrowUp,
-  ArrowDown,
   Plus,
   Edit,
-  Delete,
   View
 } from '@element-plus/icons-vue'
 import { 
@@ -423,7 +420,8 @@ const stopSystemStatusTimer = () => {
 }
 
 // 处理快速操作
-const handleQuickAction = (action: any) => {
+type QuickAction = { name: string; action: string }
+const handleQuickAction = (action: QuickAction) => {
   ElMessage.info(`执行操作: ${action.name}`)
   // 这里可以根据action.action执行相应的操作
 }
@@ -436,8 +434,8 @@ watch(chartTimeRange, async (newRange) => {
     if (trendRes.data.success) {
       accessTrendData.value = trendRes.data.data.data
     }
-  } catch (error) {
-    console.error('获取访问趋势失败:', error)
+  } catch (e) {
+    console.error('获取访问趋势失败:', e)
   } finally {
     chartLoading.value = false
   }
@@ -448,7 +446,7 @@ const checkECharts = async () => {
   try {
     await import('echarts')
     hasECharts.value = true
-  } catch (error) {
+  } catch {
     console.warn('ECharts 未安装，使用简化图表组件')
     hasECharts.value = false
   }
@@ -607,7 +605,7 @@ onUnmounted(() => {
 
 .update-text {
   font-size: 12px;
-  color: #909399;
+  /* color: #909399; */
 }
 
 .chart-container {
@@ -648,7 +646,7 @@ onUnmounted(() => {
 
 .status-name {
   font-size: 14px;
-  color: #606266;
+  /* color: #606266; */
 }
 
 .status-value {
@@ -701,7 +699,7 @@ onUnmounted(() => {
 .action-name {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  /* color: #303133; */
   margin-bottom: 4px;
 }
 

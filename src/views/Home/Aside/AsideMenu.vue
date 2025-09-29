@@ -33,47 +33,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, type Component } from 'vue'
 import { useMenuStore } from '@/stores/Menu'
 import router from '@/router'
 import * as Icons from '@element-plus/icons-vue'
 const menuStore = useMenuStore()
 
 // 构造最终菜单：主导航“管理”下挂后端返回的二级项；无数据时兜底静态默认项
-const iconOf = (name?: string) => (Icons as any)[name as string] || (Icons as any).Operation
+const IconsMap = Icons as unknown as Record<string, Component>
+const iconOf = (name?: string) => IconsMap[name as string] || IconsMap.Operation
+
+type MenuChild = { id: string; index: string; label: string; icon: Component }
+type MenuGroup = 
+  | { id: string; label: string; icon: Component; children: MenuChild[] }
+  | { id: string; label: string; icon: Component; path: string; children: [] }
 
 // 构造菜单数据结构用于渲染
-const menuGroups = computed(() => {
+const menuGroups = computed<MenuGroup[]>(() => {
     const tree = menuStore.menuTree || []
     
     if (tree.length === 0) {
         // 如果没有任何菜单数据，使用兜底数据
-        return [{
+        const fallback: MenuGroup[] = [{
+            id: 'fallback-root',
             label: '管理',
             icon: iconOf('Setting'),
             children: [
-                { index: '/menus', label: '目录管理', icon: iconOf('Menu') },
-                { index: '/roles', label: '角色管理', icon: iconOf('User') },
-                { index: '/permissions', label: '权限管理', icon: iconOf('Lock') }
+                { id: 'fallback-menus', index: '/menus', label: '目录管理', icon: iconOf('Menu') },
+                { id: 'fallback-roles', index: '/roles', label: '角色管理', icon: iconOf('User') },
+                { id: 'fallback-permissions', index: '/permissions', label: '权限管理', icon: iconOf('Lock') }
             ]
         }]
+        return fallback
     }
     
     // 处理所有菜单项
-    return tree.map((item: any) => {
+    return tree.map((item: { _id: string; name: string; icon?: string; path?: string; children?: Array<{ _id: string; path?: string; name: string; icon?: string }> }) => {
         // 如果有子菜单，处理为下拉菜单
         if (Array.isArray(item.children) && item.children.length > 0) {
             return {
                 id: item._id,
                 label: item.name,
                 icon: iconOf(item.icon),
-                children: item.children.filter((c: any) => !!c.path).map((child: any) => ({
-                    id: child._id,
-                    index: child.path,
-                    label: child.name,
-                    icon: iconOf(child.icon)
-                }))
-            }
+                children: item.children
+                    .filter((c) => !!c.path)
+                    .map((child) => ({
+                        id: child._id,
+                        index: String(child.path || ''),
+                        label: child.name,
+                        icon: iconOf(child.icon)
+                    }))
+            } as MenuGroup
         }
         // 如果没有子菜单但有路径，处理为独立菜单项
         else if (item.path) {
@@ -81,13 +91,13 @@ const menuGroups = computed(() => {
                 id: item._id,
                 label: item.name,
                 icon: iconOf(item.icon),
-                path: item.path,
+                path: String(item.path),
                 children: []
-            }
+            } as MenuGroup
         }
         // 如果没有子菜单也没有路径，跳过
         return null
-    }).filter((item): item is NonNullable<typeof item> => item !== null)
+    }).filter((item): item is MenuGroup => item !== null)
 })
 
 const handleOpen = (key: string, keyPath: string[]) => {

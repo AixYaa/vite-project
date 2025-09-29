@@ -93,7 +93,7 @@ router.beforeEach(async (to, from, next) => {
         }
         
         next();
-      } catch (error) {
+      } catch {
         ElMessage.error('登录已过期，请重新登录');
         localStorage.removeItem('AixAdminToken');
         next({ name: 'login' });
@@ -105,9 +105,11 @@ router.beforeEach(async (to, from, next) => {
 });
 
 // 检查路由权限的函数
-const checkRoutePermission = async (path: string, menuTree: any[]): Promise<boolean> => {
+type MenuNode = { path?: string; children?: MenuNode[] };
+
+const checkRoutePermission = async (path: string, menuTree: MenuNode[]): Promise<boolean> => {
   // 递归检查菜单树中是否包含该路径
-  const checkInTree = (items: any[]): boolean => {
+  const checkInTree = (items: MenuNode[]): boolean => {
     for (const item of items) {
       if (item.path === path) {
         return true;
