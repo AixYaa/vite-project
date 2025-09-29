@@ -67,27 +67,60 @@ const router = createRouter({
 })
 
 // 导航守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   if (to.name !== 'login') {
     const token = localStorage.getItem('AixAdminToken');
     if (!token) {
       ElMessage.error('请先登录');
       next({ name: 'login' });
     } else {
-      // 调用后端获取用户信息，验证token有效性
-      instance.get('/auth/profile').then(async () => {
-        const menuStore = useMenuStore()
+      try {
+        // 调用后端获取用户信息，验证token有效性
+        await instance.get('/auth/profile');
+        const menuStore = useMenuStore();
+        
         // 加载并注入动态菜单对应的路由，仅执行一次
-        await menuStore.loadMyMenus()
+        await menuStore.loadMyMenus();
+        
+        // 检查用户是否有访问当前路由的权限
+        if (to.path !== '/dashboard' && to.path !== '/') {
+          const hasPermission = await checkRoutePermission(to.path, menuStore.menuTree);
+          if (!hasPermission) {
+            ElMessage.error('您没有访问此页面的权限');
+            next({ name: 'dashboard' }); // 重定向到仪表盘
+            return;
+          }
+        }
+        
         next();
-      }).catch(() => {
+      } catch (error) {
         ElMessage.error('登录已过期，请重新登录');
         localStorage.removeItem('AixAdminToken');
         next({ name: 'login' });
-      });
+      }
     }
   } else {
     next();
   }
 });
+
+// 检查路由权限的函数
+const checkRoutePermission = async (path: string, menuTree: any[]): Promise<boolean> => {
+  // 递归检查菜单树中是否包含该路径
+  const checkInTree = (items: any[]): boolean => {
+    for (const item of items) {
+      if (item.path === path) {
+        return true;
+      }
+      if (item.children && item.children.length > 0) {
+        if (checkInTree(item.children)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  
+  return checkInTree(menuTree);
+};
 export default router;
