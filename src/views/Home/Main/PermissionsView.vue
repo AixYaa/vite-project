@@ -3,12 +3,16 @@
         <el-card>
             <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:12px;">
                 <div>权限管理</div>
-                <div>
+                <div style="display:flex; gap:12px; align-items:center;">
+                    <!-- <el-switch v-model="treeMode" active-text="树型" inactive-text="列表" @change="onViewModeChange" /> -->
+                    <template v-if="!treeMode">
+                        <el-switch v-model="groupMode" active-text="分组" inactive-text="不分组" @change="onGroupModeChange" />
+                    </template>
                     <el-button type="success" @click="openTemplate">权限模板</el-button>
                     <el-button type="primary" @click="openCreate">新建权限</el-button>
                 </div>
             </div>
-            <el-table :data="rows" stripe style="width: 100%">
+            <el-table v-if="!treeMode && !groupMode" :data="rows" stripe style="width: 100%">
                 <el-table-column prop="name" label="名称" width="120" />
                 <el-table-column prop="code" label="编码" width="150" />
                 <el-table-column label="类型" width="120">
@@ -16,15 +20,6 @@
                         <el-tag :type="getTypeTagType(scope.row.type)">
                             {{ getTypeLabel(scope.row.type) }}
                         </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="200">
-                    <template #default="scope">
-                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                            <el-tag v-for="action in scope.row.action" :key="action" size="small" type="info">
-                                {{ getActionLabel(action) }}
-                            </el-tag>
-                        </div>
                     </template>
                 </el-table-column>
                 <el-table-column prop="module" label="模块" width="100">
@@ -42,6 +37,39 @@
                     </template>
                 </el-table-column>
             </el-table>
+            <div v-else-if="treeMode" style="padding:4px 0;">
+                <el-tree
+                    :data="permissionTree"
+                    :props="{ children: 'children', label: 'label' }"
+                    accordion
+                    default-expand-all
+                />
+            </div>
+            <div v-else>
+                <el-collapse v-model="activeGroups" accordion>
+                    <el-collapse-item v-for="(items, mod) in groupedPermissions" :key="mod" :name="mod">
+                        <template #title>
+                            <span style="font-weight:600;">{{ getModuleLabel(mod as string) }}（{{ items.length }}）</span>
+                        </template>
+                        <el-table :data="items" size="small" style="width:100%">
+                            <el-table-column prop="name" label="名称" width="160" />
+                            <el-table-column prop="code" label="编码" width="180" />
+                            <el-table-column label="类型" width="120">
+                                <template #default="scope">
+                                    <el-tag :type="getTypeTagType(scope.row.type)">{{ getTypeLabel(scope.row.type) }}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="description" label="描述" />
+                            <el-table-column label="操作" width="180">
+                                <template #default="scope">
+                                    <el-button size="small" @click="openEdit(scope.row)">编辑</el-button>
+                                    <el-button size="small" type="danger" @click="onDelete(scope.row)">删除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-collapse-item>
+                </el-collapse>
+            </div>
             <div style="margin-top:12px; text-align:right;">
                 <el-pagination
                     v-model:current-page="page"
@@ -139,12 +167,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchPermissions, createPermission, updatePermission, deletePermission } from '@/axios/permissions'
+import { fetchPermissions, fetchPermissionTree, createPermission, updatePermission, deletePermission } from '@/axios/permissions'
 
 const rows = ref<any[]>([])
 const total = ref(0)
 const page = ref(1)
 const limit = ref(10)
+const treeMode = ref(false)
+const permissionTree = ref<any[]>([])
+const groupMode = ref(true)
+const activeGroups = ref<string[]>([])
+const groupedPermissions = ref<Record<string, any[]>>({})
 
 const visible = ref(false)
 const editing = ref(false)
@@ -211,7 +244,36 @@ const load = async () => {
     if (data.success) {
         rows.value = data.data
         total.value = data.pagination.total
+        if (groupMode.value) buildGroups()
     }
+    if (treeMode.value) {
+        const t = await fetchPermissionTree()
+        if (t.data.success) permissionTree.value = t.data.data
+    }
+}
+
+const onViewModeChange = async () => {
+    if (treeMode.value) {
+        const t = await fetchPermissionTree()
+        if (t.data.success) permissionTree.value = t.data.data
+    }
+}
+
+const onGroupModeChange = () => {
+    if (groupMode.value) buildGroups()
+}
+
+const buildGroups = () => {
+    const map: Record<string, any[]> = {}
+    for (const p of rows.value) {
+        // 优先使用 code 前缀做分组，例如 user:create -> user
+        const codePrefix = String(p.code || '').split(':')[0] || 'other'
+        const moduleKey = codePrefix || (p.module || 'other')
+        if (!map[moduleKey]) map[moduleKey] = []
+        map[moduleKey].push(p)
+    }
+    groupedPermissions.value = map
+    activeGroups.value = Object.keys(map)
 }
 
 // 辅助方法

@@ -1,5 +1,9 @@
 import instance from './index';
 
+export const fetchPermissionTree = () => {
+  return instance.get('/permissions/tree');
+}
+
 export const fetchPermissions = (params: { page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' } = {}) => {
   return instance.get('/permissions', { params });
 };

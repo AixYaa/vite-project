@@ -55,20 +55,43 @@
         </el-dialog>
 
         <!-- 权限分配对话框 -->
-        <el-dialog v-model="permissionVisible" title="分配权限" width="600">
-            <div style="margin-bottom: 16px;">
+        <el-dialog v-model="permissionVisible" title="分配权限" width="700">
+            <div style="margin-bottom: 12px; display:flex; justify-content: space-between; align-items:center; gap:12px;">
                 <el-text type="info">为角色 "{{ currentRole?.name }}" 分配权限</el-text>
-            </div>
-            <el-checkbox-group v-model="selectedPermissions" style="max-height: 400px; overflow-y: auto;">
-                <div v-for="permission in allPermissions" :key="permission._id" style="margin-bottom: 8px;">
-                    <el-checkbox :value="permission._id" :label="permission._id">
-                        <div style="display: flex; flex-direction: column; margin-left: 8px;">
-                            <span style="font-weight: 500;">{{ permission.name }}</span>
-                            <span style="font-size: 12px; color: #666;">{{ permission.code }} - {{ permission.description || '无描述' }}</span>
-                        </div>
-                    </el-checkbox>
+                <div style="display:flex; gap:8px; flex-wrap: wrap;">
+                    <el-dropdown>
+                        <el-button size="small">批量勾选</el-button>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item @click="checkByAction('view', true)">全选 查看</el-dropdown-item>
+                                <el-dropdown-item @click="checkByAction('create', true)">全选 创建</el-dropdown-item>
+                                <el-dropdown-item @click="checkByAction('edit', true)">全选 编辑</el-dropdown-item>
+                                <el-dropdown-item @click="checkByAction('delete', true)">全选 删除</el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                    <el-dropdown>
+                        <el-button size="small">批量取消</el-button>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item @click="checkByAction('view', false)">取消 查看</el-dropdown-item>
+                                <el-dropdown-item @click="checkByAction('create', false)">取消 创建</el-dropdown-item>
+                                <el-dropdown-item @click="checkByAction('edit', false)">取消 编辑</el-dropdown-item>
+                                <el-dropdown-item @click="checkByAction('delete', false)">取消 删除</el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
                 </div>
-            </el-checkbox-group>
+            </div>
+            <el-tree
+                ref="permissionTreeRef"
+                :data="permissionTree"
+                :props="{ children: 'children', label: 'label' }"
+                show-checkbox
+                node-key="id"
+                :default-checked-keys="selectedPermissions"
+                style="max-height: 400px; overflow-y: auto;"
+            />
             <template #footer>
                 <el-button @click="permissionVisible=false">取消</el-button>
                 <el-button type="primary" @click="savePermissions">保存权限</el-button>
@@ -111,7 +134,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchRoles, createRole, updateRole, deleteRole } from '@/axios/roles'
-import { fetchPermissions } from '@/axios/permissions'
+import { fetchPermissions, fetchPermissionTree } from '@/axios/permissions'
 import { fetchMenuTree } from '@/axios/menus'
 import * as Icons from '@element-plus/icons-vue'
 
@@ -130,6 +153,36 @@ const permissionVisible = ref(false)
 const currentRole = ref<any>(null)
 const allPermissions = ref<any[]>([])
 const selectedPermissions = ref<string[]>([])
+const permissionTreeRef = ref()
+const permissionTree = ref<any[]>([])
+
+// 根据动作批量勾选/取消（view/create/edit/delete）
+const checkByAction = (action: 'view' | 'create' | 'edit' | 'delete', checked: boolean) => {
+    const tree = permissionTree.value
+    const collect: string[] = []
+    const walk = (nodes: any[]) => {
+        for (const n of nodes) {
+            if (n.children && n.children.length) {
+                walk(n.children)
+            } else if (n.code) {
+                // 叶子：权限项，匹配 code 的冒号后缀
+                const suffix = String(n.code).split(':')[1]
+                if (suffix === action) collect.push(String(n.id))
+            }
+        }
+    }
+    walk(tree)
+
+    if (!permissionTreeRef.value) return
+    // 当前已选
+    const current: string[] = permissionTreeRef.value.getCheckedKeys()
+    const set = new Set(current)
+    for (const id of collect) {
+        if (checked) set.add(id)
+        else set.delete(id)
+    }
+    permissionTreeRef.value.setCheckedKeys(Array.from(set))
+}
 
 // 菜单分配相关
 const menuVisible = ref(false)
@@ -192,11 +245,11 @@ const openPermissions = async (row: any) => {
         typeof permission === 'string' ? permission : permission._id
     )
     
-    // 加载所有权限
+    // 加载权限树
     try {
-        const { data } = await fetchPermissions({ page: 1, limit: 1000 })
+        const { data } = await fetchPermissionTree()
         if (data.success) {
-            allPermissions.value = data.data
+            permissionTree.value = data.data
         }
     } catch (e: any) {
         ElMessage.error('加载权限失败')
@@ -209,9 +262,12 @@ const openPermissions = async (row: any) => {
 // 保存权限分配
 const savePermissions = async () => {
     try {
+        // 只保存叶子节点（真正的权限项），过滤掉模块节点（id 形如 module:xxx）
+        const rawChecked: string[] = permissionTreeRef.value?.getCheckedKeys(true) || permissionTreeRef.value?.getCheckedKeys() || []
+        const checkedPermissionIds = rawChecked.filter((id: string) => !String(id).startsWith('module:'))
         const updateData = {
             ...currentRole.value,
-            permissions: selectedPermissions.value
+            permissions: checkedPermissionIds
         }
         await updateRole(currentRole.value._id, updateData)
         ElMessage.success('权限分配成功')
