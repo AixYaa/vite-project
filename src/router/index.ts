@@ -37,6 +37,12 @@ const router = createRouter({
           name: 'menus',
           component: () => import('../views/Home/Main/MenusView.vue'),
           meta: { title: '目录管理' }
+        },
+        {
+          path: '/users',
+          name: 'users',
+          component: () => import('../views/Home/Main/UsersView.vue'),
+          meta: { title: '用户管理' }
         }
       ]
     },

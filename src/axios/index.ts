@@ -1,5 +1,6 @@
 import axios from "axios";
 import router from "@/router";
+import { ElMessage } from "element-plus";
 
 const instance = axios.create({
     baseURL: "/api",
@@ -27,12 +28,33 @@ instance.interceptors.response.use(
     },
     (error) => {
         if (error.response) {
-            const { status } = error.response;
+            const { status, data } = error.response;
             if (status === 401) {
-                // 未授权，清理并跳转登录（不刷新整页）
-                localStorage.removeItem("AixAdminToken");
-                if (router.currentRoute.value.name !== 'login') {
-                    router.push({ name: 'login' });
+                const message = data?.message || '';
+                
+                // 区分token过期和权限不足
+                if (message.includes('无效的访问令牌') || 
+                    message.includes('令牌已失效') || 
+                    message.includes('请提供访问令牌') ||
+                    message.includes('权限验证失败') ||
+                    message === '') {
+                    // token过期或无效，跳转登录
+                    localStorage.removeItem("AixAdminToken");
+                    if (router.currentRoute.value.name !== 'login') {
+                        router.push({ name: 'login' });
+                    }
+                } else if (message.includes('缺少权限') || 
+                          message.includes('权限不足') ||
+                          message.includes('角色不存在')) {
+                    // 权限不足，只显示错误提示，不跳转登录
+                    console.warn('权限不足:', message);
+                    ElMessage.error(message);
+                } else {
+                    // 其他401错误，也跳转登录
+                    localStorage.removeItem("AixAdminToken");
+                    if (router.currentRoute.value.name !== 'login') {
+                        router.push({ name: 'login' });
+                    }
                 }
             }
         }
