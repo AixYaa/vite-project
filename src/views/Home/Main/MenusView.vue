@@ -141,9 +141,28 @@ const onSubmit = async () => {
 
 const onDelete = async (row: any) => {
     try {
-        await ElMessageBox.confirm('确定删除该菜单吗？', '提示', { type: 'warning' })
+        // 检查是否有子菜单
+        const hasChildren = row.children && row.children.length > 0
+        
+        let confirmMessage = '确定删除该菜单吗？'
+        let confirmTitle = '删除菜单'
+        
+        if (hasChildren) {
+            const childrenNames = row.children.map((child: any) => child.name).join('、')
+            confirmMessage = `该菜单包含子菜单：${childrenNames}\n\n删除后将同时删除所有子菜单，此操作不可恢复！\n\n确定要删除吗？`
+            confirmTitle = '删除父级菜单'
+        }
+        
+        await ElMessageBox.confirm(confirmMessage, confirmTitle, { 
+            type: 'warning',
+            dangerouslyUseHTMLString: false,
+            confirmButtonText: '确定删除',
+            cancelButtonText: '取消',
+            confirmButtonClass: 'el-button--danger'
+        })
+        
         await deleteMenu(row._id)
-        ElMessage.success('删除成功')
+        ElMessage.success(hasChildren ? '菜单及其子菜单删除成功' : '菜单删除成功')
         await load()
         await menuStore.loadMyMenus()
     } catch {}
