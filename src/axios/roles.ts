@@ -20,4 +20,21 @@ export const deleteRole = (id: string) => {
   return instance.delete(`/roles/${id}`);
 };
 
+// ------ API Keys for Role ------
+export const listRoleApiKeys = (roleId: string) => {
+  return instance.get(`/roles/${roleId}/api-keys`);
+};
+
+export const generateRoleApiKey = (roleId: string, remark: string = '') => {
+  return instance.post(`/roles/${roleId}/api-keys`, { remark });
+};
+
+export const toggleRoleApiKey = (roleId: string, key: string, isActive: boolean) => {
+  return instance.put(`/roles/${roleId}/api-keys/toggle`, { key, isActive });
+};
+
+export const revokeRoleApiKey = (roleId: string, key: string) => {
+  return instance.delete(`/roles/${roleId}/api-keys/${encodeURIComponent(key)}`);
+};
+
 
