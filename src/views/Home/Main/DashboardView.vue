@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, markRaw } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
   User, 
@@ -205,8 +205,8 @@ const stats = ref([
     value: '0',
     change: '+0%',
     changeType: 'positive',
-    changeIcon: ArrowUp,
-    icon: User,
+    changeIcon: markRaw(ArrowUp),
+    icon: markRaw(User),
     color: '#409EFF'
   },
   {
@@ -215,8 +215,8 @@ const stats = ref([
     value: '0',
     change: '+0',
     changeType: 'positive',
-    changeIcon: ArrowUp,
-    icon: Setting,
+    changeIcon: markRaw(ArrowUp),
+    icon: markRaw(Setting),
     color: '#67C23A'
   },
   {
@@ -225,8 +225,8 @@ const stats = ref([
     value: '0',
     change: '+0',
     changeType: 'positive',
-    changeIcon: ArrowUp,
-    icon: Document,
+    changeIcon: markRaw(ArrowUp),
+    icon: markRaw(Document),
     color: '#E6A23C'
   },
   {
@@ -235,8 +235,8 @@ const stats = ref([
     value: '0',
     change: '+0',
     changeType: 'positive',
-    changeIcon: ArrowUp,
-    icon: DataAnalysis,
+    changeIcon: markRaw(ArrowUp),
+    icon: markRaw(DataAnalysis),
     color: '#F56C6C'
   }
 ])
@@ -293,21 +293,21 @@ const quickActions = ref([
   {
     name: '创建用户',
     description: '添加新的系统用户',
-    icon: Plus,
+    icon: markRaw(Plus),
     color: '#409EFF',
     action: 'createUser'
   },
   {
     name: '编辑角色',
     description: '修改角色权限配置',
-    icon: Edit,
+    icon: markRaw(Edit),
     color: '#67C23A',
     action: 'editRole'
   },
   {
     name: '查看日志',
     description: '查看系统操作日志',
-    icon: View,
+    icon: markRaw(View),
     color: '#E6A23C',
     action: 'viewLogs'
   }
