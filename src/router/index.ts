@@ -19,6 +19,12 @@ const router = createRouter({
           meta: { title: '仪表盘' }
         },
         {
+          path: '/resource-pool',
+          name: 'resource-pool',
+          component: () => import('../views/Home/Main/ResourcePoolView.vue'),
+          meta: { title: '资源池' }
+        },
+        {
           path: '/roles',
           name: 'roles',
           component: () => import('../views/Home/Main/RolesView.vue'),
