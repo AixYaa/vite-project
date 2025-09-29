@@ -10,14 +10,14 @@
                 <span>仪表盘</span>
             </el-menu-item>
 
-            <template v-for="group in menuGroups" :key="group.label">
+            <template v-for="group in menuGroups" :key="(group as any).id || group.label">
                 <!-- 有子菜单的显示为下拉菜单 -->
-                <el-sub-menu v-if="group.children && group.children.length > 0" :index="group.label">
+                <el-sub-menu v-if="group.children && group.children.length > 0" :index="(group as any).id || group.label">
                     <template #title>
                         <el-icon><component :is="group.icon" /></el-icon>
                         <span>{{ group.label }}</span>
                     </template>
-                    <el-menu-item v-for="item in group.children" :key="item.index" :index="item.index">
+                    <el-menu-item v-for="item in group.children" :key="(item as any).id || item.index" :index="item.index">
                         <el-icon><component :is="item.icon" /></el-icon>
                         <span>{{ item.label }}</span>
                     </el-menu-item>
@@ -64,9 +64,11 @@ const menuGroups = computed(() => {
         // 如果有子菜单，处理为下拉菜单
         if (Array.isArray(item.children) && item.children.length > 0) {
             return {
+                id: item._id,
                 label: item.name,
                 icon: iconOf(item.icon),
                 children: item.children.filter((c: any) => !!c.path).map((child: any) => ({
+                    id: child._id,
                     index: child.path,
                     label: child.name,
                     icon: iconOf(child.icon)
@@ -76,6 +78,7 @@ const menuGroups = computed(() => {
         // 如果没有子菜单但有路径，处理为独立菜单项
         else if (item.path) {
             return {
+                id: item._id,
                 label: item.name,
                 icon: iconOf(item.icon),
                 path: item.path,

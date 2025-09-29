@@ -22,7 +22,7 @@ console.log(router.currentRoute.value.matched);
                     <Header />
                 </el-header>
                 <Breadcrumb />
-                <el-main>
+                <el-main style="padding: 0; height: calc(100vh - 140px); overflow: hidden;">
                     <RouterView v-slot="{ Component, route }">
                         <Transition name="fade" mode="out-in">
                             <component :is="Component" :key="route.fullPath" />
@@ -42,7 +42,7 @@ console.log(router.currentRoute.value.matched);
     overflow: hidden;
 }
 ::v-deep(.el-menu) {
-    // height: 100vh;
+    height: 100vh;
 }
 
 /* 页面主内容淡入淡出动画 */
