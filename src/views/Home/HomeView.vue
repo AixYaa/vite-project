@@ -41,9 +41,6 @@ console.log(router.currentRoute.value.matched);
     height: 100vh;
     overflow: hidden;
 }
-::v-deep(.el-menu) {
-    height: 100vh;
-}
 
 /* 页面主内容淡入淡出动画 */
 :deep(.fade-enter-active),
