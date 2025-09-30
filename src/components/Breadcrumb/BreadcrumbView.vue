@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue';
+import { ref, watch, onMounted, nextTick, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Close } from '@element-plus/icons-vue';
 import { useMenuStore } from '@/stores/Menu'
@@ -57,6 +57,7 @@ const routeHistory = ref<string[]>(loadHistoryFromStorage());
 const scrollbarRef = ref<ScrollbarInstance>();
 // 分段组件引用
 const segmentedRef = ref<SegmentedInstance>();
+let animationFrameId: number | null = null;
 
 // 支持正负号、空格、小数的正则
 const regex = /translateX\(\s*([+-]?\d+\.?\d*)\s*px\)/;
@@ -129,6 +130,13 @@ onMounted(() => {
         label: getTitle(route),
         value: route.path
     };
+    // 设置鼠标滚轮滚动触发滚动条
+    // 获取滚动容器元素
+    const scrollWrapper = scrollbarRef.value?.wrapRef || document.body;
+    // 添加CSS过渡效果使滚动更丝滑
+    scrollWrapper.style.transition = 'scroll-left 0.1s ease-out';
+    // 监听鼠标滚轮事件
+    scrollWrapper.addEventListener('wheel', handleWheel);
 
     if (!headerList.value.some(item => item.value === initialItem.value)) {
         headerList.value.push(initialItem);
@@ -142,7 +150,54 @@ onMounted(() => {
         }, 100);
     }
 });
+onUnmounted(() => {
+    // 清理事件监听和动画帧
+    const scrollWrapper = scrollbarRef.value?.wrapRef || document.body;
+    if (scrollWrapper) {
+        scrollWrapper.removeEventListener('wheel', handleWheel);
+    }
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+});
+// 带惯性效果的滚动处理函数
+const handleWheel = (e: { preventDefault: () => void; deltaY: number; }) => {
+    e.preventDefault();
+    const scrollWrapper = scrollbarRef.value?.wrapRef || document.body;
 
+    // 基础滚动速度 (可根据需要调整)
+    const baseSpeed = 1.2;
+    // 计算滚动距离
+    let scrollDistance = e.deltaY * baseSpeed;
+
+    // 惯性滚动效果
+    const startScrollLeft = scrollWrapper.scrollLeft;
+    const startTime = performance.now();
+    const duration = 300; // 惯性持续时间(ms)
+
+    // 如果已有动画帧，先取消
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+
+    // 平滑滚动动画
+    const smoothScroll = (timestamp: number) => {
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // 缓动函数 - 使滚动先快后慢，更自然
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+
+        scrollWrapper.scrollLeft = startScrollLeft + scrollDistance * easeOut;
+
+        if (progress < 1) {
+            animationFrameId = requestAnimationFrame(smoothScroll);
+        } else {
+            animationFrameId = null;
+        }
+    };
+
+    animationFrameId = requestAnimationFrame(smoothScroll);
+};
 // 监听路由变化
 watch(() => route.path, async (newPath) => {
     const newItem: HeaderItem = {

@@ -19,6 +19,14 @@ html[data-theme='day'] {
   background-color: #fff;
   color: #000;
 }
+:root[data-theme='dark'] {
+  --bg-color: #fff;
+  --text-color: #222;
+}
+:root[data-theme='day'] {
+  --bg-color: #222;
+  --text-color: #fff;
+}
 body, #app {
   background: none !important;
 }

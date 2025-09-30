@@ -10,9 +10,6 @@
             <span>{{ menuStore.AdminTitle }}</span>
         </div>
         <div class="user-info">
-            <el-icon @click="handleSetting">
-                <Setting />
-            </el-icon>
             <ToolView />
             <el-avatar :src="profile.avatar || defaultAvatar" @click="openProfileDialog" style="cursor: pointer;" />
             <span class="username">{{ profile.username || 'User' }}</span>
@@ -64,7 +61,7 @@
 
 <script setup lang="ts">
 import ToolView from '@/components/SwitchUI/ToolView.vue';
-import { Setting, Expand, Fold } from '@element-plus/icons-vue';
+import { Expand, Fold } from '@element-plus/icons-vue';
 import { useMenuStore } from '@/stores/Menu';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
@@ -72,11 +69,6 @@ import instance from '@/axios/index';
 import { getProfile, updateProfile, uploadAvatar } from '@/axios/auth';
 import { ref, onMounted } from 'vue';
 const menuStore = useMenuStore();
-
-const handleSetting = () => {
-    // 打开设置抽屉
-    menuStore.toggleShowSetting();
-};
 
 const logout = async () => {
     try {
