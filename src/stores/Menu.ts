@@ -2,6 +2,23 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { fetchMyMenus } from '@/axios/menus'
 import router from '@/router'
+
+// 定义菜单项类型
+interface MenuItem {
+    _id?: string
+    name: string
+    path?: string
+    parentId?: string
+    children?: MenuItem[]
+}
+
+// 定义路由项类型
+interface RouteItem {
+    path: string
+    name: string
+    component: () => Promise<unknown>
+    meta: { title: string }
+}
 export const useMenuStore = defineStore('menu', () => {
 
     const showAside = ref<boolean>(true); // 是否显示侧边栏
@@ -26,10 +43,13 @@ export const useMenuStore = defineStore('menu', () => {
 
     // 动态菜单与路由
     const dynamicAdded = ref<boolean>(false)
-    const menuTree = ref<any[]>([])
+    const menuTree = ref<MenuItem[]>([])
 
-    const mapRoute = (item: any) => {
+    const mapRoute = (item: MenuItem): RouteItem => {
         // 仅示范：把后端的 path 直接挂在 Home 的 children 下，由视图组件自己解析
+        if (!item.path) {
+            throw new Error('Menu item must have a path')
+        }
         return {
             path: item.path,
             name: item.path.replace(/\//g, '_') || 'menu_' + Math.random().toString(36).slice(2),
@@ -38,9 +58,9 @@ export const useMenuStore = defineStore('menu', () => {
         }
     }
 
-    const addRoutesByMenus = (list: any[]) => {
-        const routes: any[] = []
-        const dfs = (items: any[]) => {
+    const addRoutesByMenus = (list: MenuItem[]) => {
+        const routes: RouteItem[] = []
+        const dfs = (items: MenuItem[]) => {
             for (const it of items) {
                 if (it.path) routes.push(mapRoute(it))
                 if (it.children?.length) dfs(it.children)
@@ -62,16 +82,16 @@ export const useMenuStore = defineStore('menu', () => {
         try {
             const { data } = await fetchMyMenus()
             if (data.success) {
-                const items = Array.isArray(data.data) ? data.data : []
-                const isTree = items.some((i:any) => Array.isArray(i.children))
+                const items: MenuItem[] = Array.isArray(data.data) ? data.data : []
+                const isTree = items.some((i: MenuItem) => Array.isArray(i.children))
                 if (isTree) {
                     menuTree.value = items
                 } else {
-                    const groups = items.filter((n:any) => !n.path)
-                    const leaves = items.filter((n:any) => !!n.path && !n.parentId)
-                    const grouped = groups.map((g:any) => ({
+                    const groups = items.filter((n: MenuItem) => !n.path)
+                    const leaves = items.filter((n: MenuItem) => !!n.path && !n.parentId)
+                    const grouped = groups.map((g: MenuItem) => ({
                         ...g,
-                        children: items.filter((n:any) => n.parentId === g._id && !!n.path)
+                        children: items.filter((n: MenuItem) => n.parentId === g._id && !!n.path)
                     }))
                     menuTree.value = [...grouped, ...leaves]
                 }

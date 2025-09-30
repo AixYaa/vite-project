@@ -28,7 +28,7 @@
                     <el-tree ref="treeRef" :data="treeRoot" :props="treeProps" node-key="fullPath" lazy :load="loadTree"
                         highlight-current :current-key="currentTreeKey" @node-click="onTreeNodeClick"
                         class="directory-tree">
-                        <template #default="{ node, data }">
+                        <template #default="{ data }">
                             <div class="tree-node">
                                 <el-icon v-if="data.type === 'dir'" class="folder-icon">
                                     <Folder />
@@ -162,8 +162,7 @@ import {
     Grid,
     List,
     CopyDocument,
-    View,
-    Expand
+    View
 } from '@element-plus/icons-vue'
 
 type Item = { name: string; type: 'dir' | 'file'; url?: string | null }
@@ -178,7 +177,22 @@ const treeProps = { label: 'label', children: 'children', isLeaf: 'isLeaf' }
 const treeRef = ref()
 const currentTreeKey = ref('')
 
-const loadTree = async (node: any, resolve: (data: any[]) => void) => {
+interface TreeNode {
+    level: number
+    data: {
+        fullPath: string
+    }
+}
+
+interface TreeNodeData {
+    label: string
+    fullPath: string
+    isLeaf: boolean
+    type: 'dir' | 'file'
+    url?: string | null
+}
+
+const loadTree = async (node: TreeNode, resolve: (data: TreeNodeData[]) => void) => {
     // 根节点：加载 images/ 与 files/
     if (node.level === 0) {
         resolve([
@@ -198,19 +212,19 @@ const loadTree = async (node: any, resolve: (data: any[]) => void) => {
             const files = items.filter(x => x.type === 'file')
 
             // 创建目录节点
-            const dirChildren = dirs.map(d => ({
+            const dirChildren: TreeNodeData[] = dirs.map(d => ({
                 label: d.name,
                 fullPath: [fullPath, d.name].filter(Boolean).join('/'),
                 isLeaf: false, // 目录节点可以被展开
-                type: 'dir'
+                type: 'dir' as const
             }))
 
             // 创建文件节点
-            const fileChildren = files.map(f => ({
+            const fileChildren: TreeNodeData[] = files.map(f => ({
                 label: f.name,
                 fullPath: [fullPath, f.name].filter(Boolean).join('/'),
                 isLeaf: true, // 文件节点是叶子节点
-                type: 'file',
+                type: 'file' as const,
                 url: f.url
             }))
 
@@ -221,12 +235,12 @@ const loadTree = async (node: any, resolve: (data: any[]) => void) => {
         } else {
             resolve([])
         }
-    } catch (e) {
+    } catch {
         resolve([])
     }
 }
 
-const onTreeNodeClick = (data: any) => {
+const onTreeNodeClick = (data: TreeNodeData) => {
     if (data.type === 'file') {
         // 如果是文件，直接预览
         preview(data.url)
@@ -242,25 +256,6 @@ const handleItemClick = (item: Item) => {
     }
 }
 
-// 调试目录树结构
-const debugTreeStructure = () => {
-    if (!treeRef.value) return
-
-    // 检查所有节点
-    const checkNode = (node: any, level = 0) => {
-        const indent = '  '.repeat(level)
-        if (node.childNodes) {
-            node.childNodes.forEach((child: any) => checkNode(child, level + 1))
-        }
-    }
-
-    // 检查根节点
-    const rootNode = treeRef.value.getNode('')
-    if (rootNode) {
-        checkNode(rootNode)
-    }
-
-}
 
 // 递归展开目录树到目标路径
 const expandToPath = async (targetPath: string) => {
@@ -270,8 +265,6 @@ const expandToPath = async (targetPath: string) => {
 
     // 逐级展开路径，确保每一层都被正确展开
     for (let i = 0; i < pathParts.length; i++) {
-        const currentPath = pathParts.slice(0, i + 1).join('/')
-
         // 展开当前路径的父节点
         if (i > 0) {
             const parentPath = pathParts.slice(0, i).join('/')
@@ -321,15 +314,6 @@ const expandToPath = async (targetPath: string) => {
     // 最后再次尝试设置选中状态
     await nextTick()
 
-    const finalNode = treeRef.value.getNode(targetPath)
-
-    // 检查所有父节点的展开状态
-    for (let i = 0; i < pathParts.length; i++) {
-        const checkPath = pathParts.slice(0, i + 1).join('/')
-        const checkNode = treeRef.value.getNode(checkPath)
-
-    }
-
 }
 
 // 同步目录树选中状态
@@ -367,7 +351,7 @@ const refresh = async () => {
             // 同步目录树选中状态
             await syncTreeSelection()
         }
-    } catch (e) {
+    } catch {
         ElMessage.error('加载失败')
     } finally {
         loading.value = false
