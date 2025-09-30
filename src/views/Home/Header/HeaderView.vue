@@ -1,8 +1,9 @@
 <template>
     <div class="headerView">
-        <div class="collapse" v-if="menuStore.showCollapseBtn" @click="menuStore.toggleCollapse">
-            <el-icon>
-                <Menu />
+        <div class="collapse" v-if="menuStore.showCollapseBtn">
+            <el-icon size="20" @click="menuStore.toggleCollapse">
+                <Expand v-show="menuStore.collapse" />
+                <Fold v-show="!menuStore.collapse" />
             </el-icon>
         </div>
         <div>
@@ -24,13 +25,8 @@
             </el-form-item>
             <el-form-item label="头像">
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap: wrap;">
-                    <el-upload
-                        :show-file-list="false"
-                        :auto-upload="false"
-                        :on-change="handleSelectFile"
-                        :limit="1"
-                        accept="image/*"
-                    >
+                    <el-upload :show-file-list="false" :auto-upload="false" :on-change="handleSelectFile" :limit="1"
+                        accept="image/*">
                         <el-button type="primary" plain>选择图片</el-button>
                     </el-upload>
                     <!-- <el-input v-model="editForm.avatar" placeholder="或粘贴图片URL/Base64" style="width: 240px;" /> -->
@@ -68,7 +64,7 @@
 
 <script setup lang="ts">
 import ToolView from '@/components/SwitchUI/ToolView.vue';
-import { Menu, Setting } from '@element-plus/icons-vue';
+import { Setting, Expand, Fold } from '@element-plus/icons-vue';
 import { useMenuStore } from '@/stores/Menu';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
@@ -184,6 +180,7 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     padding: 0 20px;
+    height: 100%;
 
     .user-info {
         display: flex;
